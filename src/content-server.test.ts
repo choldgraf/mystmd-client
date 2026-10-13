@@ -26,6 +26,7 @@ test('reads built pages under a path prefix and maps slugs to files', async (t) 
   assert.equal(myst.fileForSlug(''), 'index.md');
   assert.equal(myst.fileForSlug('nope'), undefined);
   assert.deepEqual((await myst.pages()).map((p) => p.location), ['/index.md', '/guide/a.md']);
+  assert.equal((await myst.built('guide/a.md')).page!.mdast.children[0].url, 'http://assets/x.png');
   assert.deepEqual(await myst.built('missing.md'), { path: 'missing.md', page: null });
   assert.deepEqual(await contentServer(base + 'nope').built('a.md'), { path: 'a.md', page: null, error: 'not found' });
 });
