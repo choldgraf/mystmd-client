@@ -64,10 +64,10 @@ export function contentServer(base: string, assets = base) {
   /** The built page JSON for a project-relative path, or null if mystmd hasn't built it. */
   async function page(path: string): Promise<BuiltPage | null> {
     const all = pageSlugs(await json('config.json'));
-    if (all.join() !== slugList) await fetchPages(all);
+    const fetched = all.join() !== slugList && (await fetchPages(all));
     const slug = slugs.get('/' + path);
     if (!slug) return null;
-    const result: BuiltPage = await json(`content/${slug}.json`);
+    const result: BuiltPage = fetched ? fetched[all.indexOf(slug)] : await json(`content/${slug}.json`);
     rebaseUrls(result.mdast, assets);
     return result;
   }
