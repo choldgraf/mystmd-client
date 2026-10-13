@@ -44,7 +44,20 @@ Paths are in the [mystmd repository](https://github.com/jupyter-book/mystmd), an
 - `pages()` reads each page's JSON from the content server, the index page first, because `myst.xref.json` isn't rewritten on edits and lacks `title` and `enumerator` (U1).
 - `watch` calls back on every rebuild and on (re)connect (`/socket` in `packages/myst-cli/src/build/site/start.ts`).
 - `watch` returns a function that stops it.
-- `BuiltPage` has at least `location` and `mdast`.
+- `BuiltPage` is the page JSON that `myst start`'s content server serves at `/content/<slug>.json`.
+- Consumers read its `location`, `mdast`, `sha256`, `frontmatter` and `references`.
+- `parseMyst` returns `frontmatter.title` and `frontmatter.content_includes_title` (`getFrontmatter` in `packages/myst-transforms/src/frontmatter.ts`).
+- myst-author's preview reads `content_includes_title` to decide whether to show a title.
+- A failed content server request throws an error whose message is the response body.
+- So a host that proxies the content server and answers 503 with `mystmdMissing` surfaces that text as the error, which myst-author's app server and preview read.
+
+These exports are for myst-author alone:
+
+- `built`, `fileForSlug`, `rebaseFetched`, `sha256` and `savedHashes`
+- the types `Built`, `ContentServer` and `Myst`
+
+They encode mystmd's file hash and URL roots, and myst-author's preview uses them.
+mystmd-lsp doesn't call them.
 
 ## What it found
 
@@ -73,12 +86,15 @@ The package reaches into mystmd's internals: the parse pipeline, the transform p
 
 - `myst-parser` is pinned to an exact version in `package.json`, so the tokenizer and the conversion from tokens to mdast only change when we bump it.
   The directive and role definitions (`myst-directives`, `myst-roles`, `myst-ext-*`) and `myst-transforms` are caret ranges, so an install can still pick up newer ones.
-- When bumping `mystmd`, check it still ships `myst-parser` 1.7.4, so `npm run test:mystmd` checks the parse against the same version.
+- When bumping `mystmd`, check it still uses `myst-parser` 1.7.4, so `npm run test:mystmd` checks the parse against the same version.
+  mystmd bundles its CLI with no dependency list, so look in [`packages/myst-cli/package.json`](https://github.com/jupyter-book/mystmd/blob/mystmd%40<version>/packages/myst-cli/package.json) at the mystmd tag.
 - The parse options, extension list and transform order, copied from `packages/myst-cli/src/process/myst.ts` and `mdast.ts`.
-- The position copy onto directive children, because directive transforms drop `position`.
-- `HOST=127.0.0.1` when starting mystmd, because `myst start` binds IPv6 `localhost` only otherwise.
-- The "Content server started" line that `ready` waits for, from `packages/myst-cli/src/build/site/start.ts`.
+- The position copy, `HOST=127.0.0.1`, the "Content server started" line and reading per-page JSON, each described under [Interface](#interface).
 - The content server's routes (`/config.json`, `/content/<slug>.json`, `/socket`) and the `BuiltPage` fields we read.
+- The `config.json` shape (`projects[0].index` and `pages[].slug`) that `pages()` and `built()` read.
+- The `RELOAD` socket message that `watch` reads.
 - The node fields `rebaseUrls` rewrites (`image.url` and `urlOptimized`, `crossReference.dataUrl`, `output.jupyter_data.data[*].path`) and the `/content/` prefix it adds, which must match mystmd's page JSON.
 - `savedHashes`, which must match how mystmd hashes a file for a page's `sha256`.
-- Reading each page's JSON from the content server instead of `myst.xref.json`, which isn't rewritten on edits and has no `title` or `enumerator`.
+- The `MYST_BIN` env var and the `--server-port` flag, which the consumers' docs describe.
+- The commit of this package that each consumer's lock file pins.
+- The `myst-common` range in each consumer, which should match ours so the `GenericParent` type lines up.
