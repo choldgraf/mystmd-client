@@ -28,7 +28,9 @@ import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { VFile } from 'vfile';
 
-// A parse exported by mystmd would replace this (myst-author upstream proposal U8).
+// Parses a single MyST page the way mystmd does; a parse exported by mystmd would replace this (myst-author upstream proposal U8).
+// It runs mystmd's internal pipeline and transforms, so package.json pins myst-parser exactly: a minor release can change behaviour.
+
 // The extensions mystmd enables by default, so the parse matches `myst build`.
 const extDirectives = [cardDirective, ...gridDirectives, ...tabDirectives, proofDirective, ...exerciseDirectives];
 const extRoles = [buttonRole];
@@ -39,8 +41,8 @@ export const roles = [...defaultRoles, ...extRoles];
 /** Parse MyST without transforms; myst-parser adds its default directives and roles to the extensions. */
 export const parse = (s: string, vfile?: VFile) => mystParse(s, { markdownit: { linkify: true }, directives: extDirectives, roles: extRoles, vfile });
 
-/** Parse and transform a single MyST page, without the rest of the project. */
-export function parseMyst(md: string) {
+/** Parse and transform a single MyST page, without the rest of the project. `keepTitle` keeps a leading `# Title`, which mystmd removes. */
+export function parseMyst(md: string, { keepTitle = false } = {}) {
   const vfile = new VFile();
   const tree = parse(md, vfile) as GenericParent;
 
@@ -48,9 +50,7 @@ export function parseMyst(md: string) {
   visit(tree, 'mystDirective', (d: GenericNode) => d.children?.forEach((c) => (c.position ??= d.position)));
 
   // Like mystmd, read the YAML frontmatter and use the first heading as the title if there isn't one.
-  // Unlike mystmd, keep a leading `# Title` for the outline and labels.
-  // Half-typed YAML adds a `frontmatter-is-yaml` message, which service.ts doesn't show.
-  const { frontmatter } = getFrontmatter(vfile, tree, { propagateTargets: true, keepTitleNode: true }) as { frontmatter: Record<string, any> };
+  const { frontmatter } = getFrontmatter(vfile, tree, { propagateTargets: true, keepTitleNode: keepTitle }) as { frontmatter: Record<string, any> };
 
   // Without the project's bibliography, no citation is found, so mystmd's fallback turns `@label` into a reference to a label on this page, as a build does.
   visit(tree, 'cite', (c: GenericNode) => void (c.error = true));
@@ -72,5 +72,5 @@ export function parseMyst(md: string) {
     .use(keysPlugin)
     .runSync(tree as any, vfile);
 
-  return { tree, messages: vfile.messages };
+  return { tree, frontmatter, messages: vfile.messages };
 }
