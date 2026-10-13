@@ -34,7 +34,7 @@ export async function startMyst(root: string, log = console.log, args: string[] 
 
   const exited = new Promise<never>((_, reject) => {
     child.on('error', (err: NodeJS.ErrnoException) => reject(err.code === 'ENOENT' ? new Error(mystmdMissing) : err));
-    child.on('exit', (code) => reject(new Error(`myst exited with code ${code}`)));
+    child.on('close', (code) => reject(new Error(`myst exited with code ${code}`)));
   });
   const ready = new Promise<void>((resolve, reject) => {
     exited.catch(reject);
