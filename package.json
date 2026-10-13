@@ -24,6 +24,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "node --test 'src/**/*.test.ts'",
+    "test:mystmd": "TEST_MYSTMD=1 npm test",
     "prepare": "npm run build"
   },
   "dependencies": {
@@ -44,6 +45,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
+    "mystmd": "^1.11.0",
     "typescript": "^7.0.2"
   },
   "license": "BSD-3-Clause",

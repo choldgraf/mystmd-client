@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { mystmdMissing } from './content-server.ts';
+import { contentServer, mystmdMissing } from './content-server.ts';
 import { startMyst } from './start.ts';
 
 test('reports a missing mystmd as mystmdMissing', async () => {
@@ -23,4 +23,20 @@ test('passes args, logs output, and rejects exited when mystmd dies after it is 
   await myst.ready;
   await assert.rejects(myst.exited, { message: 'myst exited with code 3' });
   assert.deepEqual(lines, ['[myst] Content server started --execute']);
+});
+
+test('with real mystmd: serves the project at url and watch sees it', { skip: !process.env.TEST_MYSTMD, timeout: 90_000 }, async () => {
+  delete process.env.MYST_BIN; // npm scripts put node_modules/.bin/myst on the PATH
+  const root = mkdtempSync(join(tmpdir(), 'myst-'));
+  writeFileSync(join(root, 'myst.yml'), 'version: 1\nproject:\n  id: test\nsite:\n  template: book-theme\n');
+  writeFileSync(join(root, 'index.md'), '# Title\n');
+  const myst = await startMyst(root, () => {});
+  try {
+    await myst.ready;
+    const server = contentServer(myst.url);
+    await new Promise<void>((resolve) => { const stop = server.watch(() => (stop(), resolve())); });
+    assert.deepEqual((await server.pages()).map((p) => p.location), ['/index.md']);
+  } finally {
+    myst.stop();
+  }
 });
