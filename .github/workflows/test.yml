@@ -13,5 +13,6 @@ jobs:
           node-version: 24
       - run: npm ci
       - run: npm test
+      - run: npm run test:mystmd
       - run: npm run typecheck
       - run: npm run build
