@@ -61,10 +61,14 @@ mystmd exporting these helpers, so this package can be deleted (U8, linked above
 The package reaches into mystmd's internals: the parse pipeline, the transform plugins and the content server's JSON shape.
 A minor mystmd release can change any of them, so check these when mystmd changes.
 
-- `myst-parser` is pinned to an exact version in `package.json`, so the parse only changes when we bump it.
+- `myst-parser` is pinned to an exact version in `package.json`, so the tokenizer and the conversion from tokens to mdast only change when we bump it.
+  The directive and role definitions (`myst-directives`, `myst-roles`, `myst-ext-*`) and `myst-transforms` are caret ranges, so an install can still pick up newer ones.
+- The `mystmd` devDependency stays on a release that ships the pinned `myst-parser`, so `npm run test:mystmd` checks the parse against the same version.
 - The parse options, extension list and transform order, copied from `packages/myst-cli/src/process/myst.ts` and `mdast.ts`.
 - The position copy onto directive children, because directive transforms drop `position`.
 - `HOST=127.0.0.1` when starting mystmd, because `myst start` binds IPv6 `localhost` only otherwise.
 - The "Content server started" line that `ready` waits for, from `packages/myst-cli/src/build/site/start.ts`.
 - The content server's routes (`/config.json`, `/content/<slug>.json`, `/socket`) and the `BuiltPage` fields we read.
+- The node fields `rebaseUrls` rewrites (`image.url` and `urlOptimized`, `crossReference.dataUrl`, `output.jupyter_data.data[*].path`) and the `/content/` prefix it adds, which must match mystmd's page JSON.
+- `savedHashes`, which must match how mystmd hashes a file for a page's `sha256`.
 - Reading each page's JSON from the content server instead of `myst.xref.json`, which isn't rewritten on edits and has no `title` or `enumerator`.
