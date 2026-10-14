@@ -50,11 +50,6 @@ Call `myst` yourself when you need a full export or site build.
 Some details that the [Interface](#interface) list doesn't spell out:
 
 - `log` receives each line of mystmd's stdout and stderr, prefixed with `[myst] `, and defaults to `console.log`.
-- `ready` rejects if mystmd exits before it logs "Content server started".
-- `exited` never resolves: it rejects whenever mystmd exits, whatever the exit code and including after `stop`.
-- When `exited` rejects, stop using `url` and show the error's message to the user; nothing restarts mystmd for you.
-- `startMyst` asks the OS for a free port on 127.0.0.1 and passes it to `--server-port`.
-- Nothing handles a conflict if another process takes that port before mystmd binds it.
 - It is tested with `myst-parser` pinned at `1.7.4` and the `mystmd` devDependency `^1.11.0` (see [What must stay in sync by hand](#what-must-stay-in-sync-by-hand)).
 - `pages()` reads only the first project in `config.json`, so a multi-project site returns that project's pages.
 
@@ -74,8 +69,9 @@ Paths are in the [mystmd repository](https://github.com/jupyter-book/mystmd), an
 - `keepTitle: true` keeps a leading `# Title`, which mystmd removes (`keepTitleNode` in `packages/myst-cli/src/frontmatter.ts`).
 - `messages` are the parse and transform messages.
 - `startMyst` picks the port and serves at `http://127.0.0.1:<port>`, because `myst start` binds IPv6 `localhost` only otherwise (`packages/myst-cli/src/build/site/start.ts`, [mystmd#2254](https://github.com/jupyter-book/mystmd/issues/2254), [mystmd#2471](https://github.com/jupyter-book/mystmd/issues/2471)).
-- `ready` resolves when mystmd logs "Content server started", and rejects with `mystmdMissing` if mystmd isn't installed.
-- `exited` rejects if mystmd dies or isn't installed.
+- Nothing handles a conflict if another process takes that port before mystmd binds it.
+- `ready` resolves when mystmd logs "Content server started", rejects if mystmd exits before then, and rejects with `mystmdMissing` if mystmd isn't installed.
+- `exited` rejects if mystmd dies or isn't installed, including after `stop`, and nothing restarts mystmd.
 - `pages()` reads each page's JSON from the content server, the index page first, because `myst.xref.json` isn't rewritten on edits and lacks `title` and `enumerator` ([U1](https://github.com/choldgraf/myst-author/blob/main/upstream/U1-richer-xref-entries.md)).
 - `watch` calls back on every rebuild and on (re)connect (`/socket` in `packages/myst-cli/src/build/site/start.ts`).
 - `watch` returns a function that stops it.
