@@ -31,6 +31,33 @@ const stopWatching = server.watch(onReload);
 `parse` is the bare `mystParse` call with `linkify` and mystmd's extension directives and roles.
 `parseMyst` also runs the transforms for a single page.
 
+## How it works
+
+```mermaid
+flowchart LR
+  consumer["consumer (mystmd-lsp, myst-author)"]
+  consumer -->|start| child["myst start --headless (child process)"]
+  consumer -->|content-server| client["content-server client"]
+  client -->|"HTTP and websocket"| child
+  child -->|"built page JSON"| client
+  consumer -->|parse| parser["myst-parser, in-process, no child"]
+```
+
+Use `parse` to parse one page with mystmd's settings and extensions when you can't wait for a build.
+Use `start` and `content-server` when you need what mystmd actually rendered, plugins and cross-references included.
+Call `myst` yourself when you need a full export or site build.
+
+Some details that the [Interface](#interface) list doesn't spell out:
+
+- `log` receives each line of mystmd's stdout and stderr, prefixed with `[myst] `, and defaults to `console.log`.
+- `ready` rejects if mystmd exits before it logs "Content server started".
+- `exited` never resolves: it rejects whenever mystmd exits, whatever the exit code and including after `stop`.
+- When `exited` rejects, stop using `url` and show the error's message to the user; nothing restarts mystmd for you.
+- `startMyst` asks the OS for a free port on 127.0.0.1 and passes it to `--server-port`.
+- Nothing handles a conflict if another process takes that port before mystmd binds it.
+- It is tested with `myst-parser` pinned at `1.7.4` and the `mystmd` devDependency `^1.11.0` (see [What must stay in sync by hand](#what-must-stay-in-sync-by-hand)).
+- `pages()` reads only the first project in `config.json`, so a multi-project site returns that project's pages.
+
 ## Develop
 
 `npm test` runs without mystmd.
