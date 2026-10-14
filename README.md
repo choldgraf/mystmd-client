@@ -46,7 +46,7 @@ Paths are in the [mystmd repository](https://github.com/jupyter-book/mystmd), an
 - A directive's children carry the directive's position, because directive transforms drop it (see [Data and packaging gaps](https://github.com/choldgraf/myst-author/blob/main/upstream/README.md#data-and-packaging-gaps-candidates-for-small-fixes) in myst-author's upstream list).
 - `keepTitle: true` keeps a leading `# Title`, which mystmd removes (`keepTitleNode` in `packages/myst-cli/src/frontmatter.ts`).
 - `messages` are the parse and transform messages.
-- `startMyst` picks the port and serves at `http://127.0.0.1:<port>`, because `myst start` binds IPv6 `localhost` only otherwise (`packages/myst-cli/src/build/site/start.ts`).
+- `startMyst` picks the port and serves at `http://127.0.0.1:<port>`, because `myst start` binds IPv6 `localhost` only otherwise (`packages/myst-cli/src/build/site/start.ts`, [mystmd#2254](https://github.com/jupyter-book/mystmd/issues/2254), [mystmd#2471](https://github.com/jupyter-book/mystmd/issues/2471)).
 - `ready` resolves when mystmd logs "Content server started", and rejects with `mystmdMissing` if mystmd isn't installed.
 - `exited` rejects if mystmd dies or isn't installed.
 - `pages()` reads each page's JSON from the content server, the index page first, because `myst.xref.json` isn't rewritten on edits and lacks `title` and `enumerator` ([U1](https://github.com/choldgraf/myst-author/blob/main/upstream/U1-richer-xref-entries.md)).
