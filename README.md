@@ -56,7 +56,7 @@ Some details that the [Interface](#interface) list doesn't spell out:
 ## Develop
 
 `npm test` runs without mystmd.
-`npm run test:mystmd` also compares the parse against the `mystmd` devDependency.
+`npm run test:mystmd` also starts the real `mystmd` devDependency and checks its content server.
 CI runs both, plus `npm run typecheck`.
 
 ## Interface
@@ -86,10 +86,10 @@ Paths are in the [mystmd repository](https://github.com/jupyter-book/mystmd), an
 These exports are for myst-author alone:
 
 - `built`, `fileForSlug`, `rebaseFetched`, `sha256` and `savedHashes`
-- the types `Built`, `ContentServer` and `Myst`
+- the types `Built` and `ContentServer`
 
 They encode mystmd's file hash and URL roots.
-myst-author's preview uses them.
+myst-author uses them.
 mystmd-lsp doesn't call them.
 
 ## What it found
@@ -119,8 +119,7 @@ The package reaches into mystmd's internals: the parse pipeline, the transform p
 
 - `myst-parser` is pinned to an exact version in `package.json`, so the tokenizer and the conversion from tokens to mdast only change when we bump it.
   The directive and role definitions (`myst-directives`, `myst-roles`, `myst-ext-*`) and `myst-transforms` are caret ranges, so an install can still pick up newer ones.
-- When bumping `mystmd`, check it still uses the `myst-parser` version pinned in `package.json`.
-  Otherwise `npm run test:mystmd` compares the parse against a different version.
+- When bumping `mystmd`, check it still uses the `myst-parser` version pinned in `package.json`, so `parseMyst` keeps matching `myst build`.
   mystmd bundles its CLI with no dependency list, so read `packages/myst-cli/package.json` at the `mystmd@<version>` [tag](https://github.com/jupyter-book/mystmd/tags).
 - The parse options, extension list and transform order, copied from the mystmd files named under [Interface](#interface).
 - The position copy, `HOST=127.0.0.1`, the "Content server started" line and reading per-page JSON, each described under [Interface](#interface).

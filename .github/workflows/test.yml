@@ -15,4 +15,3 @@ jobs:
       - run: npm test
       - run: npm run test:mystmd
       - run: npm run typecheck
-      - run: npm run build
