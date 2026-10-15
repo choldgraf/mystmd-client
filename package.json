@@ -25,7 +25,9 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test 'src/**/*.test.ts'",
     "test:mystmd": "TEST_MYSTMD=1 npm test",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "docs": "cd docs && myst build --html",
+    "docs:live": "cd docs && myst start"
   },
   "dependencies": {
     "myst-common": "^1.10.1",

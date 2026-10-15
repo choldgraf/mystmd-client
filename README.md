@@ -58,6 +58,7 @@ Some details that the [Interface](#interface) list doesn't spell out:
 `npm test` runs without mystmd.
 `npm run test:mystmd` also starts the real `mystmd` devDependency and checks its content server.
 CI runs both, plus `npm run typecheck`.
+`npm run docs:live` previews the [docs site](https://chrisholdgraf.com/mystmd-client/), which is this README, and `npm run docs` builds it.
 
 ## Interface
 

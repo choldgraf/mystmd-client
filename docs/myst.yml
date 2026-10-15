@@ -1,0 +1,16 @@
+version: 1
+extends:
+  - https://raw.githubusercontent.com/myst-contrib/myst-contrib.github.io/main/docs/footer.yml
+project:
+  id: mystmd-client
+  title: mystmd-client
+  github: https://github.com/choldgraf/mystmd-client
+  plugins:
+    # Rewrites relative links in {include}d repo files (READMEs) to GitHub.
+    - https://github.com/myst-contrib/myst-include-link-rewrites/releases/latest/download/index.mjs
+  toc:
+    - file: index.md
+site:
+  template: book-theme
+  options:
+    logo_text: mystmd-client
