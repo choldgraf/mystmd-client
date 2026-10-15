@@ -97,22 +97,6 @@ These exports are for myst-author alone:
 They encode mystmd's file hash and URL roots.
 mystmd-lsp doesn't call them.
 
-## What it found
-
-Replacing the two copies with this package:
-
-| Repository | Change | Diff | Command |
-| --- | --- | --- | --- |
-| mystmd-lsp | deleted the copies in `src/mystmd/` | +32/−225 (without `package-lock.json`) | `git -C mystmd-lsp diff --shortstat 15a63dd..b6c390f -- . ':!package-lock.json'` |
-| myst-author | deleted `packages/mystmd` | +51/−381 | `git -C myst-author diff --shortstat e567422..d17e991` |
-
-The two copies had drifted apart before the merge.
-The commits in this repo that reconciled them (`git log --oneline 97acb47^..56f39fd`) say how each difference was resolved.
-
-## Where it could go next
-
-A conformance check that compares `parseMyst` against what `myst build` produces.
-
 ## What it needs upstream
 
 This package can be deleted once mystmd exports what its three entry points provide: a single-page parse (`parse`), a `myst start --headless` launcher (`start`) and a content-server client (`content-server`).
