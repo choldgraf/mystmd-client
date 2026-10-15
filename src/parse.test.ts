@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import type { GenericParent } from 'myst-common';
 import { parseMyst } from './parse.ts';
 
-// The root's children are blocks; these are the nodes in them.
+// The root's children are blocks. This flattens them to the nodes inside.
 const nodes = (tree: GenericParent) => tree.children.flatMap((block) => block.children!);
 
 test('removes a leading title unless keepTitle, and gives directive children a position', () => {

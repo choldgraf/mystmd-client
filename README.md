@@ -2,7 +2,7 @@
 
 This package starts mystmd (`myst start --headless`), reads its content server, and parses MyST with mystmd's own settings.
 It replaces two copies of the same code that were kept in sync by hand, one in [mystmd-lsp](https://github.com/choldgraf/mystmd-lsp) and one in [myst-author](https://github.com/choldgraf/myst-author).
-It is installed from GitHub, not npm, because it goes away once mystmd exports these helpers (see [What it needs upstream](#what-it-needs-upstream)).
+It is installed from GitHub rather than npm because it goes away once mystmd exports these helpers (see [What it needs upstream](#what-it-needs-upstream)).
 
 ## Use
 
@@ -20,7 +20,7 @@ import { contentServer, mystmdMissing, type BuiltPage } from 'mystmd-client/cont
 
 const { tree, frontmatter, messages } = parseMyst(text, { keepTitle: true });
 
-const myst = await startMyst(root, log, ['--execute']); // root holds myst.yml; log and args are optional
+const myst = await startMyst(root, log, ['--execute']); // root holds myst.yml. log and args are optional.
 // myst: { url, ready, exited, stop }
 
 const server = contentServer(myst.url);
@@ -44,14 +44,8 @@ flowchart LR
 ```
 
 Use `parse` to parse one page with mystmd's settings and extensions when you can't wait for a build.
-Use `start` and `content-server` when you need what mystmd actually rendered, plugins and cross-references included.
+Use `start` and `content-server` when you need the page as mystmd built it, plugins and cross-references included.
 Call `myst` yourself when you need a full export or site build.
-
-Some details that the [Interface](#interface) list doesn't spell out:
-
-- `log` receives each line of mystmd's stdout and stderr, prefixed with `[myst] `, and defaults to `console.log`.
-- It is tested with `myst-parser` pinned at `1.7.4` and the `mystmd` devDependency `^1.11.0` (see [What must stay in sync by hand](#what-must-stay-in-sync-by-hand)).
-- `pages()` reads only the first project in `config.json`, so a multi-project site returns that project's pages.
 
 ## Develop
 
@@ -64,25 +58,36 @@ CI runs both, plus `npm run typecheck`.
 
 Paths are in the [mystmd repository](https://github.com/jupyter-book/mystmd), and U-numbers are in [myst-author's upstream list](https://github.com/choldgraf/myst-author/blob/main/upstream/README.md).
 
+### `parse`
+
 - `parseMyst` runs mystmd's single-page transforms with the extensions mystmd enables by default (`packages/myst-cli/src/process/myst.ts` and `mdast.ts`).
 - `directives` and `roles` list what `parseMyst` parses.
-- A directive's children carry the directive's position, because directive transforms drop it (see [Data and packaging gaps](https://github.com/choldgraf/myst-author/blob/main/upstream/README.md#data-and-packaging-gaps-candidates-for-small-fixes) in myst-author's upstream list).
 - `keepTitle: true` keeps a leading `# Title`, which mystmd removes (`keepTitleNode` in `packages/myst-cli/src/frontmatter.ts`).
+- `frontmatter.title` and `frontmatter.content_includes_title` come from `getFrontmatter` in `packages/myst-transforms/src/frontmatter.ts`.
+  myst-author's preview reads `content_includes_title` to decide whether to show a title.
 - `messages` are the parse and transform messages.
-- `startMyst` picks the port and serves at `http://127.0.0.1:<port>`, because `myst start` binds IPv6 `localhost` only otherwise (`packages/myst-cli/src/build/site/start.ts`, [mystmd#2254](https://github.com/jupyter-book/mystmd/issues/2254), [mystmd#2471](https://github.com/jupyter-book/mystmd/issues/2471)).
+- A directive's children carry the directive's position, because directive transforms drop it (see [Data and packaging gaps](https://github.com/choldgraf/myst-author/blob/main/upstream/README.md#data-and-packaging-gaps-candidates-for-small-fixes) in myst-author's upstream list).
+
+### `start`
+
+- `startMyst` picks the port and serves at `http://127.0.0.1:<port>`, because `myst start` otherwise binds only IPv6 `localhost` (`packages/myst-cli/src/build/site/start.ts`, [mystmd#2254](https://github.com/jupyter-book/mystmd/issues/2254), [mystmd#2471](https://github.com/jupyter-book/mystmd/issues/2471)).
 - Nothing handles a conflict if another process takes that port before mystmd binds it.
-- `ready` resolves when mystmd logs "Content server started", rejects if mystmd exits before then, and rejects with `mystmdMissing` if mystmd isn't installed.
-- `exited` rejects if mystmd dies or isn't installed, including after `stop`, and nothing restarts mystmd.
-- `pages()` reads each page's JSON from the content server, the index page first, because `myst.xref.json` isn't rewritten on edits and lacks `title` and `enumerator` ([U1](https://github.com/choldgraf/myst-author/blob/main/upstream/U1-richer-xref-entries.md)).
-- `watch` calls back on every rebuild and on (re)connect (`/socket` in `packages/myst-cli/src/build/site/start.ts`).
-- `watch` returns a function that stops it.
+- `log` receives each line of mystmd's stdout and stderr, prefixed with `[myst] `, and defaults to `console.log`.
+- `ready` resolves when mystmd logs "Content server started".
+  It rejects if mystmd exits before then, and with `mystmdMissing` if mystmd isn't installed.
+- `exited` rejects if mystmd dies or isn't installed, including after `stop`.
+  Nothing restarts mystmd.
+
+### `content-server`
+
 - `BuiltPage` is the page JSON that `myst start`'s content server serves at `/content/<slug>.json`.
-- Consumers read its `location`, `mdast`, `sha256`, `frontmatter` and `references`.
-- `parseMyst` returns `frontmatter.title` and `frontmatter.content_includes_title` (`getFrontmatter` in `packages/myst-transforms/src/frontmatter.ts`).
-- myst-author's preview reads `content_includes_title` to decide whether to show a title.
+  Consumers read its `location`, `mdast`, `sha256`, `frontmatter` and `references`.
+- `pages()` reads each page's JSON from the content server, the index page first, because `myst.xref.json` isn't rewritten on edits and lacks `title` and `enumerator` ([U1](https://github.com/choldgraf/myst-author/blob/main/upstream/U1-richer-xref-entries.md)).
+- `pages()` reads only the first project in `config.json`, so a multi-project site returns that project's pages.
+- `watch` calls back on every rebuild and on (re)connect (`/socket` in `packages/myst-cli/src/build/site/start.ts`).
+  It returns a function that stops it.
 - A failed content server request throws an error whose message is the response body.
-- So a host that proxies the content server and answers 503 with `mystmdMissing` surfaces that text as the error.
-  myst-author's app server and preview read it.
+  So a host that proxies the content server and answers 503 with `mystmdMissing` surfaces that text as the error, which myst-author's app server and preview read.
 
 These exports are for myst-author alone:
 
@@ -90,7 +95,6 @@ These exports are for myst-author alone:
 - the types `Built` and `ContentServer`
 
 They encode mystmd's file hash and URL roots.
-myst-author uses them.
 mystmd-lsp doesn't call them.
 
 ## What it found

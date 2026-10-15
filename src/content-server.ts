@@ -1,6 +1,7 @@
 import type { GenericParent } from 'myst-common';
 
-// A client for the content server that `myst start` runs; a client exported by mystmd would replace this (myst-author upstream proposal U8).
+// A client for the content server that `myst start` runs.
+// mystmd doesn't export one, so this is it (myst-author upstream proposal U8 asks for that export).
 
 /**
  * The parts of a `myst start` page JSON (`/content/{slug}.json`) that we use.
@@ -17,10 +18,10 @@ export type BuiltPage = {
 /** mystmd's latest build of a file, or why there is none. */
 export type Built = { path: string; page: BuiltPage | null; error?: string };
 
-/** Why `startMyst`'s `ready` rejects when mystmd isn't installed; hosts that proxy the content server send it as the error body. */
+/** The error message when mystmd isn't installed. `startMyst` rejects with it, and hosts that proxy the content server send it as the error body. */
 export const mystmdMissing = 'mystmd not found (install it, or set MYST_BIN)';
 
-/** Slugs of every page in a `myst start` project, from its `/config.json`; the index page first. */
+/** Slugs of every page in a `myst start` project, from its `/config.json`, with the index page first. */
 function pageSlugs(config: any): string[] {
   const project = config.projects[0];
   return [project.index, ...project.pages.map((p: { slug?: string }) => p.slug).filter(Boolean)];
@@ -32,18 +33,19 @@ export async function sha256(text: string) {
   return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-/** The hashes a build of `text` may have. mystmd hashes the file as saved, which may have CRLF line breaks where an editor's text has `\n`, so both are tried. */
+/** The hashes a build of `text` may have. mystmd hashes the file as saved, and the saved file may have CRLF line breaks where an editor's text has `\n`, so this returns both. */
 export const savedHashes = (text: string) => Promise.all([sha256(text), sha256(text.replaceAll('\n', '\r\n'))]);
 
 export type ContentServer = ReturnType<typeof contentServer>;
 
 /**
- * The `myst start` content server at `base`: an absolute URL (`http://127.0.0.1:3100`), or one relative to the page (`myst`) when a host proxies it.
- * `built()` points image, output, and hover-card URLs at `assets`, for when whoever displays the page reaches the server by another URL.
+ * A client for the `myst start` content server at `base`.
+ * `base` is an absolute URL such as `http://127.0.0.1:3100`, or a page-relative one such as `myst` when a host proxies the server.
+ * `built()` rewrites image, output and hover-card URLs to start with `assets`, for when the page is shown somewhere that reaches the server by another URL.
  */
 export function contentServer(base: string, assets = base) {
   base = base.replace(/\/$/, '');
-  // config.json lists slugs but not files, so map source location → slug by fetching each page once.
+  // config.json lists slugs but not files, so each page is fetched once to learn which file it came from.
   let slugs = new Map<string, string>();
   let slugList = '';
 
@@ -53,7 +55,7 @@ export function contentServer(base: string, assets = base) {
     return r.json();
   }
 
-  /** Fetch the pages with these slugs, and learn each page's file. */
+  /** Fetch the pages with these slugs and record each page's file. */
   async function fetchPages(all: string[]) {
     const result: BuiltPage[] = await Promise.all(all.map((s) => json(`content/${s}.json`)));
     slugs = new Map(result.map((p, i) => [p.location, all[i]]));
@@ -88,7 +90,7 @@ export function contentServer(base: string, assets = base) {
       for (const [location, s] of slugs) if (s === slug || !slug) return location.slice(1);
     },
 
-    /** Call `onReload` whenever mystmd rebuilds (and on (re)connect); returns a function that stops watching. */
+    /** Call `onReload` whenever mystmd rebuilds, and whenever the socket connects or reconnects. Returns a function that stops watching. */
     watch(onReload: () => void) {
       const url = new URL(`${base}/socket`, globalThis.location?.href).href.replace(/^http/, 'ws');
       let ws: WebSocket;
@@ -106,8 +108,8 @@ export function contentServer(base: string, assets = base) {
   };
 }
 
-// Pages reference images and code cell outputs at the content server's root (e.g. `/local-<hash>.png`).
-// A cross-reference's `dataUrl`, the page its hover card fetches, is root-relative too, but the server has pages under `/content/` (see `rebaseFetched`).
+// Page JSON refers to images and code cell outputs by root-relative URLs such as `/local-<hash>.png`.
+// A cross-reference's `dataUrl`, which its hover card fetches, is root-relative too, but the server serves pages under `/content/`.
 function rebaseUrls(node: any, base: string) {
   if (node.type === 'image') {
     for (const key of ['url', 'urlOptimized']) if (node[key]?.startsWith('/')) node[key] = base + node[key];
@@ -119,7 +121,7 @@ function rebaseUrls(node: any, base: string) {
   node.children?.forEach((c: any) => rebaseUrls(c, base));
 }
 
-/** Rebase a page that a cross-reference's hover card fetched from its `dataUrl` (`<base>/content/<slug>.json`), as `built()` does. */
+/** Rebase the URLs in a page that a hover card fetched from a cross-reference's `dataUrl` (`<base>/content/<slug>.json`), the way `built()` does. */
 export function rebaseFetched(url: string, page: BuiltPage | undefined) {
   const i = url.lastIndexOf('/content/');
   if (i >= 0 && page?.mdast) rebaseUrls(page.mdast, url.slice(0, i));

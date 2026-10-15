@@ -3,7 +3,8 @@ import { createServer, type AddressInfo } from 'node:net';
 import { createInterface } from 'node:readline';
 import { mystmdMissing } from './content-server.ts';
 
-// Starts `myst start --headless` for its content server; a launcher exported by mystmd would replace this (myst-author upstream proposal U8).
+// Starts `myst start --headless` for its content server.
+// mystmd doesn't export a launcher, so this is one (myst-author upstream proposal U8 asks for that export).
 
 /** A port that's free on 127.0.0.1 right now. */
 function freePort(): Promise<number> {
@@ -19,13 +20,14 @@ export type Myst = Awaited<ReturnType<typeof startMyst>>;
 
 /**
  * Run `myst start --headless` in `root`.
- * We pick the port, so `url` (the content server) is known before the first build; `ready` resolves once it's serving.
- * `exited` rejects if mystmd dies, including after `stop`; it and `ready` reject with the message `mystmdMissing` if mystmd isn't installed.
- * mystmd's output goes to `log`, a line at a time. `args` go to `myst start`, such as `--execute`.
+ * We pick the port, so `url` is known before the first build. `ready` resolves once the content server is serving.
+ * `exited` rejects when mystmd dies, including after `stop`. Both reject with `mystmdMissing` if mystmd isn't installed.
+ * Each line of mystmd's output goes to `log`. `args` are passed to `myst start`, for example `--execute`.
  */
 export async function startMyst(root: string, log = console.log, args: string[] = []) {
   const port = await freePort();
-  // myst reads PORT as its own theme-server port. Pin HOST so it doesn't bind IPv6-only `localhost`, which proxies like code-server's miss.
+  // myst reads PORT as its theme server's port, so drop it.
+  // Set HOST so myst doesn't bind only IPv6 `localhost`, which proxies like code-server's can't reach.
   const { PORT, ...rest } = process.env;
   const env = { ...rest, HOST: '127.0.0.1' };
   const child = spawn(process.env.MYST_BIN ?? 'myst', ['start', '--headless', '--server-port', String(port), ...args], { cwd: root, env, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -45,7 +47,7 @@ export async function startMyst(root: string, log = console.log, args: string[] 
       });
     }
   });
-  // Callers that don't wait for mystmd mustn't crash when it's missing.
+  // A caller that never awaits these must not get an unhandled rejection when mystmd is missing.
   exited.catch(() => {});
   ready.catch(() => {});
   return { url: `http://127.0.0.1:${port}`, ready, exited, stop };
