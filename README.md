@@ -70,7 +70,7 @@ Paths are in the [mystmd repository](https://github.com/jupyter-book/mystmd), an
 
 ### `start`
 
-- `startMyst` picks the port and serves at `http://127.0.0.1:<port>`, because `myst start` otherwise binds only IPv6 `localhost` (`packages/myst-cli/src/build/site/start.ts`, [mystmd#2254](https://github.com/jupyter-book/mystmd/issues/2254), [mystmd#2471](https://github.com/jupyter-book/mystmd/issues/2471)).
+- `startMyst` picks the port and serves at `http://127.0.0.1:<port>`, because `myst start` otherwise [binds only IPv6 `localhost`](https://github.com/jupyter-book/mystmd/issues/2254) (`packages/myst-cli/src/build/site/start.ts`), and mystmd's [build networking issue](https://github.com/jupyter-book/mystmd/issues/2471) is still open.
 - Nothing handles a conflict if another process takes that port before mystmd binds it.
 - `log` receives each line of mystmd's stdout and stderr, prefixed with `[myst] `, and defaults to `console.log`.
 - `ready` resolves when mystmd logs "Content server started".
