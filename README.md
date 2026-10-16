@@ -16,7 +16,7 @@ To move a consumer to a newer commit, run the same command (or `npm update mystm
 ```ts
 import { parse, parseMyst, directives, roles } from 'mystmd-client/parse';
 import { startMyst } from 'mystmd-client/start';
-import { contentServer, mystmdMissing, type BuiltPage } from 'mystmd-client/content-server';
+import { contentServer, mystmdMissing, type BuiltPage, type TocEntry } from 'mystmd-client/content-server';
 
 const { tree, frontmatter, messages } = parseMyst(text, { keepTitle: true });
 
@@ -25,6 +25,7 @@ const myst = await startMyst(root, log, ['--execute']); // root holds myst.yml. 
 
 const server = contentServer(myst.url);
 const pages: BuiltPage[] = await server.pages();
+const toc: TocEntry[] = await server.toc();
 const stopWatching = server.watch(onReload);
 ```
 
@@ -86,6 +87,7 @@ Consumers pin a commit of this package in their lock file, and their `myst-commo
   Consumers read its `location`, `mdast`, `sha256`, `frontmatter` and `references`.
 - `pages()` reads each page's JSON from the content server, the index page first.
 - `pages()` reads only the first project in `config.json`.
+- `toc()` is the first project's table of contents, the index page first: `{ title, level, file? }` per entry, where a part has no `file`.
 - `watch` calls back on every rebuild and on (re)connect.
   It returns a function that stops it.
 - A failed content server request throws an error whose message is the response body.

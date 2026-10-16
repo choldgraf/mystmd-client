@@ -18,6 +18,9 @@ export type BuiltPage = {
 /** mystmd's latest build of a file, or why there is none. */
 export type Built = { path: string; page: BuiltPage | null; error?: string };
 
+/** An entry of the project's table of contents: a page, or a part (no `file`). `level` is its depth, starting at 1. */
+export type TocEntry = { title: string; level: number; file?: string };
+
 /** The error message when mystmd isn't installed. `startMyst` rejects with it, and hosts that proxy the content server send it as the error body. */
 export const mystmdMissing = 'mystmd not found (install it, or set MYST_BIN)';
 
@@ -63,13 +66,23 @@ export function contentServer(base: string, assets = base) {
     return result;
   }
 
+  /** Fetch the pages again if `config` lists different ones than last time. */
+  async function sync(config: any) {
+    const all = pageSlugs(config);
+    if (all.join() !== slugList) await fetchPages(all);
+  }
+
+  /** The project-relative file for a page slug (`''` for the index page), as of the last fetch. */
+  function fileForSlug(slug: string) {
+    for (const [location, s] of slugs) if (s === slug || !slug) return location.slice(1);
+  }
+
   /** The built page JSON for a project-relative path, or null if mystmd hasn't built it. */
   async function page(path: string): Promise<BuiltPage | null> {
-    const all = pageSlugs(await json('config.json'));
-    const fetched = all.join() !== slugList && (await fetchPages(all));
+    await sync(await json('config.json'));
     const slug = slugs.get('/' + path);
     if (!slug) return null;
-    const result: BuiltPage = fetched ? fetched[all.indexOf(slug)] : await json(`content/${slug}.json`);
+    const result: BuiltPage = await json(`content/${slug}.json`);
     rebaseUrls(result.mdast, assets);
     return result;
   }
@@ -85,10 +98,18 @@ export function contentServer(base: string, assets = base) {
       return page(path).then((p) => ({ path, page: p }), (err) => ({ path, page: null, error: err.message }));
     },
 
-    /** The project-relative file for a page slug (`''` for the index page), as of the last `pages()` or `built()`. */
-    fileForSlug(slug: string) {
-      for (const [location, s] of slugs) if (s === slug || !slug) return location.slice(1);
+    /** The table of contents from `config.json`, the index page first, in the order mystmd shows them. */
+    async toc(): Promise<TocEntry[]> {
+      const config = await json('config.json');
+      await sync(config);
+      // config.json has the index page's slug but not its title.
+      const index: BuiltPage = await json(`content/${config.projects[0].index}.json`);
+      const pages: { title: string; level?: number; slug?: string }[] = config.projects[0].pages;
+      return [{ title: index.frontmatter?.title ?? index.location.slice(1), level: 1, file: index.location.slice(1) }, ...pages.map((p) => ({ title: p.title, level: p.level ?? 1, file: p.slug && fileForSlug(p.slug) }))];
     },
+
+    /** `fileForSlug`, as of the last `pages()`, `built()` or `toc()`. */
+    fileForSlug,
 
     /** Call `onReload` whenever mystmd rebuilds, and whenever the socket connects or reconnects. Returns a function that stops watching. */
     watch(onReload: () => void) {
