@@ -1,6 +1,6 @@
 # mystmd-client
 
-This package starts mystmd (`myst start --headless`), reads its content server, and parses MyST with mystmd's own settings.
+This package starts mystmd (`myst start --headless`), reads the content server it exposes, and parses MyST with mystmd's own settings.
 It replaces two copies of the same code that were kept in sync by hand, one in [mystmd-lsp](https://github.com/choldgraf/mystmd-lsp) and one in [myst-author](https://github.com/choldgraf/myst-author).
 It is installed from GitHub rather than npm because it goes away once mystmd [exports these helpers](#what-it-needs-upstream).
 
@@ -28,7 +28,7 @@ const pages: BuiltPage[] = await server.pages();
 const stopWatching = server.watch(onReload);
 ```
 
-`parse` is the bare `mystParse` call with `linkify` and mystmd's extension directives and roles.
+`parse` is mystmd's parser with its default directives and roles, and no transforms.
 `parseMyst` also runs the transforms for a single page.
 
 ## How it works
@@ -45,7 +45,7 @@ flowchart LR
 
 Use `parse` to parse one page with mystmd's settings and extensions when you can't wait for a build.
 Use `start` and `content-server` when you need the page as mystmd built it, plugins and cross-references included.
-Call `myst` yourself when you need a full export or site build.
+Run the `myst` CLI yourself when you need a full export or site build.
 
 ## Develop
 
@@ -56,8 +56,8 @@ CI runs both, plus `npm run typecheck`.
 
 `myst-parser` is pinned to an exact version in `package.json`.
 When you bump `mystmd`, check that it still uses that `myst-parser` version, so `parseMyst` keeps matching `myst build`.
-mystmd bundles its CLI with no dependency list, so read `packages/myst-cli/package.json` at the matching [mystmd tag](https://github.com/jupyter-book/mystmd/tags).
-Consumers pin a commit of this package in their lock file, and their `myst-common` range should match ours.
+The published `mystmd` package doesn't list that version, so find it in `packages/myst-cli/package.json` at the matching [mystmd tag](https://github.com/jupyter-book/mystmd/tags).
+Consumers pin a commit of this package in their lock file, and their `myst-common` range should match ours so the tree types line up.
 
 ## Interface
 
