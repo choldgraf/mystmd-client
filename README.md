@@ -87,7 +87,8 @@ Consumers pin a commit of this package in their lock file, and their `myst-commo
   Consumers read its `location`, `mdast`, `sha256`, `frontmatter` and `references`.
 - `pages()` reads each page's JSON from the content server, the index page first.
 - `pages()` reads only the first project in `config.json`.
-- `toc()` is the first project's table of contents, the index page first: `{ title, level, file? }` per entry, where a part has no `file`.
+- `toc()` is the first project's table of contents, the index page first.
+  Each entry is `{ title, level, file? }`, and a part or an external link has no `file`.
 - `watch` calls back on every rebuild and on (re)connect.
   It returns a function that stops it.
 - A failed content server request throws an error whose message is the response body.

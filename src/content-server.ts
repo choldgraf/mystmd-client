@@ -18,7 +18,7 @@ export type BuiltPage = {
 /** mystmd's latest build of a file, or why there is none. */
 export type Built = { path: string; page: BuiltPage | null; error?: string };
 
-/** An entry of the project's table of contents: a page, or a part (no `file`). `level` is its depth, starting at 1. */
+/** An entry of the project's table of contents. A part or an external link has no `file`. `level` is its depth, starting at 1. */
 export type TocEntry = { title: string; level: number; file?: string };
 
 /** The error message when mystmd isn't installed. `startMyst` rejects with it, and hosts that proxy the content server send it as the error body. */
@@ -102,13 +102,13 @@ export function contentServer(base: string, assets = base) {
     async toc(): Promise<TocEntry[]> {
       const config = await json('config.json');
       await sync(config);
-      // config.json has the index page's slug but not its title.
-      const index: BuiltPage = await json(`content/${config.projects[0].index}.json`);
-      const pages: { title: string; level?: number; slug?: string }[] = config.projects[0].pages;
+      const project = config.projects[0];
+      // config.json has the index page's slug but not its title (its `title` is the project's).
+      const index: BuiltPage = await json(`content/${project.index}.json`);
+      const pages: { title: string; level?: number; slug?: string }[] = project.pages;
       return [{ title: index.frontmatter?.title ?? index.location.slice(1), level: 1, file: index.location.slice(1) }, ...pages.map((p) => ({ title: p.title, level: p.level ?? 1, file: p.slug && fileForSlug(p.slug) }))];
     },
 
-    /** `fileForSlug`, as of the last `pages()`, `built()` or `toc()`. */
     fileForSlug,
 
     /** Call `onReload` whenever mystmd rebuilds, and whenever the socket connects or reconnects. Returns a function that stops watching. */
