@@ -29,9 +29,6 @@ const toc: TocEntry[] = await server.toc();
 const stopWatching = server.watch(onReload);
 ```
 
-`parse` is mystmd's parser with its default directives and roles, and no transforms.
-`parseMyst` also runs the transforms for a single page.
-
 ## How it works
 
 ```mermaid
@@ -73,7 +70,8 @@ Consumers pin a commit of this package in their lock file, and their `myst-commo
 
 ### `start`
 
-- `startMyst` picks the port and serves at `http://127.0.0.1:<port>`, because `myst start` otherwise [binds only IPv6 `localhost`](https://github.com/jupyter-book/mystmd/issues/2254).
+- `startMyst` runs `myst` from `PATH`, or the binary named in `MYST_BIN`.
+- It picks the port and serves at `http://127.0.0.1:<port>`, because `myst start` otherwise [binds only IPv6 `localhost`](https://github.com/jupyter-book/mystmd/issues/2254).
 - Nothing handles a conflict if another process takes that port before mystmd binds it.
 - `log` receives each line of mystmd's stdout and stderr, prefixed with `[myst] `, and defaults to `console.log`.
 - `ready` resolves when mystmd logs "Content server started".
@@ -93,7 +91,8 @@ Consumers pin a commit of this package in their lock file, and their `myst-commo
   It returns a function that stops it.
 - A failed content server request throws an error whose message is the response body.
 
-The other exports (`built`, `fileForSlug`, `rebaseFetched`, `sha256`, `savedHashes` and the types `Built` and `ContentServer`) are for myst-author alone.
+The rest is for myst-author alone.
+That is the content server's other methods (`built`, `fileForSlug`) and its `assets` argument, the exports `rebaseFetched`, `sha256` and `savedHashes`, and the types `Built`, `ContentServer` and `Myst`.
 
 ## What it needs upstream
 
