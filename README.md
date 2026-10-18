@@ -1,10 +1,10 @@
 # mystmd-client
 
-This package starts mystmd with `myst start --headless` and reads the pages from its content server.
+This package starts mystmd, the MyST build tool, with `myst start --headless`.
+Then it reads the built pages from the content server that command runs.
 It also parses MyST with mystmd's own settings.
 It holds code that [mystmd-lsp](https://github.com/choldgraf/mystmd-lsp) and [myst-author](https://github.com/choldgraf/myst-author) both need, so they don't each keep a copy in sync by hand.
-It is installed from GitHub rather than npm because it's temporary.
-It can be deleted once mystmd [exports these helpers](#what-it-needs-upstream).
+It is installed from GitHub rather than npm because it's only needed until mystmd [exports these helpers](#what-it-needs-upstream).
 
 ## Use
 
@@ -13,7 +13,7 @@ npm install mystmd-client@github:choldgraf/mystmd-client
 ```
 
 npm builds it on install with the `prepare` script.
-To move a project that uses it to a newer commit, run the same command or `npm update mystmd-client`, then commit its lock file.
+To move a project that uses it to a newer commit, run the same command or `npm update mystmd-client`, then commit that project's lock file.
 
 ```ts
 import { parse, parseMyst, directives, roles } from 'mystmd-client/parse';
@@ -72,13 +72,13 @@ Their `myst-common` range should match ours, so both use the same tree types.
 - `keepTitle: true` keeps a leading `# Title`, which mystmd removes.
 - `frontmatter` is what mystmd's frontmatter transform returns, including `title` and `content_includes_title`.
 - `messages` are the parse and transform messages.
-- Directive transforms leave a directive's children without a position, so they get the directive's position.
+- Directive transforms leave a directive's children without a position, so `parseMyst` gives them the directive's position.
 
 ### `start`
 
 - `startMyst` runs `myst` from `PATH`, or the binary named in `MYST_BIN`.
-- It picks the port and serves at `http://127.0.0.1:<port>`.
-  Without that, `myst start` [binds only IPv6 `localhost`](https://github.com/jupyter-book/mystmd/issues/2254).
+- It picks a free port and sets `HOST=127.0.0.1`, so mystmd serves at `http://127.0.0.1:<port>`.
+  Without `HOST`, `myst start` [binds only IPv6 `localhost`](https://github.com/jupyter-book/mystmd/issues/2254).
 - Nothing handles a conflict if another process takes that port before mystmd binds it.
 - `log` receives each line of mystmd's stdout and stderr, prefixed with `[myst] `.
   It defaults to `console.log`.
@@ -99,7 +99,7 @@ Their `myst-common` range should match ours, so both use the same tree types.
   Each entry is `{ title, level, file? }`.
   Parts and external links have no `file`.
 - `watch` calls back on every rebuild, and whenever its websocket connects or reconnects.
-  It returns a function that stops it.
+  It returns a function that stops watching.
 - A failed content server request throws an error whose message is the response body.
 
 The rest is for myst-author alone:
