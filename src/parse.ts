@@ -29,7 +29,8 @@ import { visit } from 'unist-util-visit';
 import { VFile } from 'vfile';
 
 // Parses a single MyST page the way mystmd does.
-// mystmd doesn't export its parse, so this copies its pipeline and transforms (myst-author upstream proposal U8 asks for that export).
+// mystmd doesn't export its parse, so this copies its pipeline and transforms.
+// myst-author's upstream proposal U8 asks for that export: https://github.com/choldgraf/myst-author/blob/main/upstream/README.md
 // package.json pins myst-parser exactly because a minor release can change what the pipeline produces.
 
 // The extensions mystmd enables by default, so the parse matches `myst build`.

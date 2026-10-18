@@ -1,7 +1,8 @@
 import type { GenericParent } from 'myst-common';
 
 // A client for the content server that `myst start` runs.
-// mystmd doesn't export one, so this is it (myst-author upstream proposal U8 asks for that export).
+// mystmd doesn't export one yet.
+// myst-author's upstream proposal U8 asks for that export: https://github.com/choldgraf/myst-author/blob/main/upstream/README.md
 
 /**
  * The parts of a `myst start` page JSON (`/content/{slug}.json`) that we use.
@@ -21,7 +22,11 @@ export type Built = { path: string; page: BuiltPage | null; error?: string };
 /** An entry of the project's table of contents. A part or an external link has no `file`. `level` is its depth, starting at 1. */
 export type TocEntry = { title: string; level: number; file?: string };
 
-/** The error message when mystmd isn't installed. `startMyst` rejects with it, and hosts that proxy the content server send it as the error body. */
+/**
+ * The error message when mystmd isn't installed.
+ * `startMyst` rejects with it.
+ * Hosts that proxy the content server send it as the error body.
+ */
 export const mystmdMissing = 'mystmd not found (install it, or set MYST_BIN)';
 
 /** Slugs of every page in a `myst start` project, from its `/config.json`, with the index page first. */
@@ -36,15 +41,20 @@ export async function sha256(text: string) {
   return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-/** The hashes a build of `text` may have. mystmd hashes the file as saved, and the saved file may have CRLF line breaks where an editor's text has `\n`, so this returns both. */
+/**
+ * The two hashes a build of `text` may have, one with `\n` line breaks and one with CRLF.
+ * mystmd hashes the file as saved, which may use CRLF where the editor's text has `\n`.
+ */
 export const savedHashes = (text: string) => Promise.all([sha256(text), sha256(text.replaceAll('\n', '\r\n'))]);
 
 export type ContentServer = ReturnType<typeof contentServer>;
 
 /**
  * A client for the `myst start` content server at `base`.
- * `base` is an absolute URL such as `http://127.0.0.1:3100`, or a page-relative one such as `myst` when a host proxies the server.
- * `built()` rewrites image, output and hover-card URLs to start with `assets`, for when the page is shown somewhere that reaches the server by another URL.
+ * `base` is an absolute URL such as `http://127.0.0.1:3100`.
+ * When a host proxies the server, it can be a page-relative URL such as `myst`.
+ * `built()` rewrites image, output and hover-card URLs to start with `assets`.
+ * Set `assets` when the page is shown somewhere that reaches the server by another URL.
  */
 export function contentServer(base: string, assets = base) {
   base = base.replace(/\/$/, '');
@@ -72,7 +82,7 @@ export function contentServer(base: string, assets = base) {
     if (all.join() !== slugList) await fetchPages(all);
   }
 
-  /** The project-relative file for a page slug (`''` for the index page), as of the last fetch. */
+  /** The project-relative file for a page slug, as of the last fetch. The empty slug `''` means the index page. */
   function fileForSlug(slug: string) {
     for (const [location, s] of slugs) if (s === slug || !slug) return location.slice(1);
   }
@@ -93,17 +103,18 @@ export function contentServer(base: string, assets = base) {
       return fetchPages(pageSlugs(await json('config.json')));
     },
 
-    /** `page(path)` as a `Built`, with any failure as its `error`. */
+    /** Like `page(path)`, but returns a `Built` with any failure as its `error` instead of throwing. */
     built(path: string): Promise<Built> {
       return page(path).then((p) => ({ path, page: p }), (err) => ({ path, page: null, error: err.message }));
     },
 
-    /** The table of contents from `config.json`, the index page first, in the order mystmd shows them. */
+    /** The table of contents from `config.json`, in the order mystmd shows it, with the index page first. */
     async toc(): Promise<TocEntry[]> {
       const config = await json('config.json');
       await sync(config);
       const project = config.projects[0];
-      // config.json has the index page's slug but not its title (its `title` is the project's).
+      // config.json has the index page's slug but not its title.
+      // The project's `title` there is the project's own, so read the page's title from the page itself.
       const index: BuiltPage = await json(`content/${project.index}.json`);
       const pages: { title: string; level?: number; slug?: string }[] = project.pages;
       return [{ title: index.frontmatter?.title ?? index.location.slice(1), level: 1, file: index.location.slice(1) }, ...pages.map((p) => ({ title: p.title, level: p.level ?? 1, file: p.slug && fileForSlug(p.slug) }))];
@@ -130,7 +141,8 @@ export function contentServer(base: string, assets = base) {
 }
 
 // Page JSON refers to images and code cell outputs by root-relative URLs such as `/local-<hash>.png`.
-// A cross-reference's `dataUrl`, which its hover card fetches, is root-relative too, but the server serves pages under `/content/`.
+// A cross-reference's hover card fetches its `dataUrl`, which is root-relative too.
+// The server serves those pages under `/content/`, so `dataUrl` also gets that prefix.
 function rebaseUrls(node: any, base: string) {
   if (node.type === 'image') {
     for (const key of ['url', 'urlOptimized']) if (node[key]?.startsWith('/')) node[key] = base + node[key];
@@ -142,7 +154,10 @@ function rebaseUrls(node: any, base: string) {
   node.children?.forEach((c: any) => rebaseUrls(c, base));
 }
 
-/** Rebase the URLs in a page that a hover card fetched from a cross-reference's `dataUrl` (`<base>/content/<slug>.json`), the way `built()` does. */
+/**
+ * Rebase the URLs in a page that a hover card fetched, the way `built()` does.
+ * `url` is the cross-reference's `dataUrl` it came from, which looks like `<base>/content/<slug>.json`.
+ */
 export function rebaseFetched(url: string, page: BuiltPage | undefined) {
   const i = url.lastIndexOf('/content/');
   if (i >= 0 && page?.mdast) rebaseUrls(page.mdast, url.slice(0, i));

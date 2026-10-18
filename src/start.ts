@@ -4,7 +4,8 @@ import { createInterface } from 'node:readline';
 import { mystmdMissing } from './content-server.ts';
 
 // Starts `myst start --headless` for its content server.
-// mystmd doesn't export a launcher, so this is one (myst-author upstream proposal U8 asks for that export).
+// mystmd doesn't export a launcher yet.
+// myst-author's upstream proposal U8 asks for that export: https://github.com/choldgraf/myst-author/blob/main/upstream/README.md
 
 /** A port that's free on 127.0.0.1 right now. */
 function freePort(): Promise<number> {
@@ -21,13 +22,14 @@ export type Myst = Awaited<ReturnType<typeof startMyst>>;
 /**
  * Run `myst start --headless` in `root`.
  * We pick the port, so `url` is known before the first build. `ready` resolves once the content server is serving.
- * `exited` rejects when mystmd dies, including after `stop`. Both reject with `mystmdMissing` if mystmd isn't installed.
+ * `exited` rejects when mystmd dies, so calling `stop` makes it reject too. Both reject with `mystmdMissing` if mystmd isn't installed.
  * Each line of mystmd's output goes to `log`. `args` are passed to `myst start`, for example `--execute`.
  */
 export async function startMyst(root: string, log = console.log, args: string[] = []) {
   const port = await freePort();
   // myst reads PORT as its theme server's port, so drop it.
-  // Set HOST so myst doesn't bind only IPv6 `localhost`, which proxies like code-server's can't reach.
+  // Set HOST, because otherwise myst binds only IPv6 `localhost`.
+  // Proxies like code-server's can't reach that.
   const { PORT, ...rest } = process.env;
   const env = { ...rest, HOST: '127.0.0.1' };
   const child = spawn(process.env.MYST_BIN ?? 'myst', ['start', '--headless', '--server-port', String(port), ...args], { cwd: root, env, stdio: ['ignore', 'pipe', 'pipe'] });
