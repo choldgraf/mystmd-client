@@ -55,11 +55,6 @@ CI runs `npm run test:mystmd` and `npm run typecheck`.
 The [docs site](https://chrisholdgraf.com/mystmd-client/) is this README.
 `npm run docs:live` previews it and `npm run docs` builds it.
 
-`myst-parser` is pinned to an exact version in `package.json`.
-When you bump `mystmd`, check that it still uses that `myst-parser` version.
-Otherwise `parseMyst` may stop matching `myst build`.
-The published `mystmd` package doesn't list that version.
-Find it in `packages/myst-parser/package.json` at the matching [mystmd tag](https://github.com/jupyter-book/mystmd/tags).
 Consumers pin a commit of this package in their lock file.
 Their `myst-common` range should match ours, so both use the same tree types.
 

@@ -32,7 +32,6 @@ import { VFile } from 'vfile';
 // mystmd doesn't export its parse, so this copies its pipeline and transforms.
 // They live in mystmd's packages/myst-cli/src/process/myst.ts (getMystParserOptions) and process/mdast.ts (transformMdast).
 // myst-author's upstream proposal U8 asks for that export: https://github.com/choldgraf/myst-author/blob/main/upstream/README.md
-// package.json pins myst-parser exactly because a minor release can change what the pipeline produces.
 
 // The extensions mystmd enables by default, so the parse matches `myst build`.
 const extDirectives = [cardDirective, ...gridDirectives, ...tabDirectives, proofDirective, ...exerciseDirectives];
