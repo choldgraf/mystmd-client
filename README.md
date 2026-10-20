@@ -51,7 +51,7 @@ Run the `myst` CLI yourself when you need a full export or site build.
 
 `npm test` runs without mystmd.
 `npm run test:mystmd` also starts the real `mystmd` devDependency and checks its content server.
-CI runs both, plus `npm run typecheck`.
+CI runs `npm run test:mystmd` and `npm run typecheck`.
 The [docs site](https://chrisholdgraf.com/mystmd-client/) is this README.
 `npm run docs:live` previews it and `npm run docs` builds it.
 
@@ -59,7 +59,7 @@ The [docs site](https://chrisholdgraf.com/mystmd-client/) is this README.
 When you bump `mystmd`, check that it still uses that `myst-parser` version.
 Otherwise `parseMyst` may stop matching `myst build`.
 The published `mystmd` package doesn't list that version.
-Find it in `packages/myst-cli/package.json` at the matching [mystmd tag](https://github.com/jupyter-book/mystmd/tags).
+Find it in `packages/myst-parser/package.json` at the matching [mystmd tag](https://github.com/jupyter-book/mystmd/tags).
 Consumers pin a commit of this package in their lock file.
 Their `myst-common` range should match ours, so both use the same tree types.
 
@@ -106,7 +106,7 @@ The rest is for myst-author alone:
 
 - The content server's other methods, `built` and `fileForSlug`, and its `assets` argument.
 - The exports `rebaseFetched`, `sha256` and `savedHashes`.
-- The types `Built`, `ContentServer` and `Myst`.
+- The types `Built` and `ContentServer`.
 
 ## What it needs upstream
 

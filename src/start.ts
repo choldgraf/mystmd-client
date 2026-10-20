@@ -17,8 +17,6 @@ function freePort(): Promise<number> {
   });
 }
 
-export type Myst = Awaited<ReturnType<typeof startMyst>>;
-
 /**
  * Run `myst start --headless` in `root`.
  * We pick the port, so `url` is known before the first build. `ready` resolves once the content server is serving.
@@ -45,6 +43,7 @@ export async function startMyst(root: string, log = console.log, args: string[] 
     for (const stream of [child.stdout, child.stderr]) {
       createInterface({ input: stream }).on('line', (line) => {
         log(`[myst] ${line}`);
+        // mystmd logs this in packages/myst-cli/src/build/site/start.ts.
         if (line.includes('Content server started')) resolve();
       });
     }
