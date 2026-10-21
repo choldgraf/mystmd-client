@@ -35,7 +35,7 @@ const stopWatching = server.watch(onReload);
 
 ```mermaid
 flowchart LR
-  consumer["consumer (mystmd-lsp, myst-author)"]
+  consumer["mystmd-lsp or myst-author"]
   consumer -->|start| child["myst start --headless (child process)"]
   consumer -->|content-server| client["content-server client"]
   client -->|"HTTP and websocket"| child
