@@ -26,7 +26,6 @@ jobs:
       - run: npm run docs
         env:
           BASE_URL: /${{ github.event.repository.name }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # for plugins that read GitHub, such as issue titles
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs/_build/html
