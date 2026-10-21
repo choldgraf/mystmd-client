@@ -43,8 +43,8 @@ flowchart LR
   consumer -->|parse| parser["myst-parser (no child process)"]
 ```
 
-Use `parse` to parse one page with mystmd's settings and extensions when you can't wait for a build.
-Use `start` and `content-server` when you need mystmd's full build of a page, including plugins and cross-references.
+Use `mystmd-client/parse` to parse one page with mystmd's settings and extensions when you can't wait for a build.
+Use `mystmd-client/start` and `mystmd-client/content-server` when you need mystmd's full build of a page, including plugins and cross-references.
 Run the `myst` CLI yourself when you need a full export or site build.
 
 ## Develop
@@ -55,13 +55,14 @@ CI runs `npm run test:mystmd` and `npm run typecheck`.
 The [docs site](https://chrisholdgraf.com/mystmd-client/) is this README.
 `npm run docs:live` previews it and `npm run docs` builds it.
 
-Consumers pin a commit of this package in their lock file.
-Their `myst-common` range should match ours, so both use the same tree types.
+mystmd-lsp and myst-author pin a commit of this package in their lock files.
+Their `myst-common` range should match ours, so all three packages use the same tree types.
 
 ## Interface
 
 ### `parse`
 
+- `parse` runs myst-parser with mystmd's extensions and no transforms.
 - `parseMyst` runs mystmd's single-page transforms with the extensions mystmd enables by default.
 - `directives` and `roles` list what `parseMyst` parses.
 - `keepTitle: true` keeps a leading `# Title`, which mystmd removes.
@@ -79,7 +80,7 @@ Their `myst-common` range should match ours, so both use the same tree types.
   It defaults to `console.log`.
 - `ready` resolves when mystmd logs "Content server started".
   It rejects if mystmd exits before then.
-  If mystmd isn't installed, it rejects with `mystmdMissing`.
+  If mystmd isn't installed, it rejects with an error whose message is `mystmdMissing`.
 - `exited` rejects if mystmd dies or isn't installed.
   Calling `stop` makes it reject too.
   Nothing restarts mystmd.
@@ -87,7 +88,7 @@ Their `myst-common` range should match ours, so both use the same tree types.
 ### `content-server`
 
 - `BuiltPage` is the page JSON that the content server serves at `/content/<slug>.json`.
-  Consumers read its `location`, `mdast`, `sha256`, `frontmatter` and `references`.
+  The type has only the fields mystmd-lsp and myst-author read: `location`, `mdast`, `sha256`, `frontmatter` and `references`.
 - `pages()` reads each page's JSON from the content server, the index page first.
 - `pages()` reads only the first project in `config.json`.
 - `toc()` is the first project's table of contents, the index page first.
@@ -99,7 +100,7 @@ Their `myst-common` range should match ours, so both use the same tree types.
 
 The rest is for myst-author alone:
 
-- The content server's other methods, `built` and `fileForSlug`, and its `assets` argument.
+- The `assets` argument of `contentServer()`, and the `built` and `fileForSlug` methods on the client it returns.
 - The exports `rebaseFetched`, `sha256` and `savedHashes`.
 - The types `Built` and `ContentServer`.
 

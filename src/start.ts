@@ -20,7 +20,7 @@ function freePort(): Promise<number> {
 /**
  * Run `myst start --headless` in `root`.
  * We pick the port, so `url` is known before the first build. `ready` resolves once the content server is serving.
- * `exited` rejects when mystmd dies, so calling `stop` makes it reject too. Both reject with `mystmdMissing` if mystmd isn't installed.
+ * `exited` rejects when mystmd dies, so calling `stop` makes it reject too. If mystmd isn't installed, both reject with an error whose message is `mystmdMissing`.
  * Each line of mystmd's output goes to `log`. `args` are passed to `myst start`, for example `--execute`.
  */
 export async function startMyst(root: string, log = console.log, args: string[] = []) {

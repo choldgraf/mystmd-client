@@ -6,7 +6,8 @@ project:
   title: mystmd-client
   github: https://github.com/choldgraf/mystmd-client
   plugins:
-    # Rewrites relative links in {include}d repo files (READMEs) to GitHub.
+    # Fixes relative links in the included README, which MyST would otherwise resolve against docs/.
+    # Links to other repo files point to GitHub, using `github` above.
     - https://github.com/myst-contrib/myst-include-link-rewrites/releases/latest/download/index.mjs
   toc:
     - file: index.md

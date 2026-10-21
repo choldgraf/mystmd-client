@@ -24,8 +24,8 @@ export type TocEntry = { title: string; level: number; file?: string };
 
 /**
  * The error message when mystmd isn't installed.
- * `startMyst` rejects with it.
- * Hosts that proxy the content server send it as the error body.
+ * `startMyst`'s `ready` and `exited` reject with an error that has this message.
+ * Apps that proxy the content server, like myst-author, send it as the error body.
  */
 export const mystmdMissing = 'mystmd not found (install it, or set MYST_BIN)';
 
@@ -52,9 +52,9 @@ export type ContentServer = ReturnType<typeof contentServer>;
 /**
  * A client for the `myst start` content server at `base`.
  * `base` is an absolute URL such as `http://127.0.0.1:3100`.
- * When a host proxies the server, it can be a page-relative URL such as `myst`.
+ * When an app proxies the server, `base` can be a page-relative URL such as `myst`.
  * `built()` rewrites image, output and hover-card URLs to start with `assets`.
- * Set `assets` when the page is shown somewhere that reaches the server by another URL.
+ * Set `assets` when the page is shown somewhere that loads the server's files from a different URL than `base`.
  */
 export function contentServer(base: string, assets = base) {
   base = base.replace(/\/$/, '');
@@ -156,7 +156,7 @@ function rebaseUrls(node: any, base: string) {
 
 /**
  * Rebase the URLs in a page that a hover card fetched, the way `built()` does.
- * `url` is the cross-reference's `dataUrl` it came from, which looks like `<base>/content/<slug>.json`.
+ * `url` is the cross-reference's `dataUrl` that the page was fetched from, like `<base>/content/<slug>.json`.
  */
 export function rebaseFetched(url: string, page: BuiltPage | undefined) {
   const i = url.lastIndexOf('/content/');
